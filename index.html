@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Bloom — PCOD Lifestyle Companion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { lav:'#EFE9F7', lavd:'#8B7BB8', lavdd:'#6C5A98', sage:'#DCEBD8', saged:'#7FA377', rose:'#F1DAD3', rosed:'#C98F82', cream:'#FBF6EF', ink:'#453A52', muted:'#8C8095', line:'#EAE1F2' },
+  fontFamily: { head:['Quicksand','sans-serif'], body:['Inter','sans-serif'] }
+}}}
+</script>
+<style>
+  :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+  *{box-sizing:inherit;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{background:#EFE9F7; font-family:'Inter',sans-serif; color:#453A52;}
+  .frame{ width:390px; max-width:100vw; height:844px; max-height:100dvh; background:#FBF6EF; border-radius:40px; overflow:hidden; position:relative; box-shadow:0 30px 60px -20px rgba(107,90,148,.35); border:8px solid #2b2530; }
+  @media (max-width:480px){ .frame{ border-radius:0; border:none; height:100dvh; } .stage{padding:0!important;} }
+  .stage{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:28px 12px; }
+  .screen{ position:absolute; inset:0; overflow-y:auto; padding:22px 18px calc(96px + env(safe-area-inset-bottom,0px)); }
+  .hidden-screen{ display:none; }
+  .chip{ border:1px solid #EAE1F2; border-radius:999px; padding:8px 14px; font-size:13px; background:#fff; transition:.15s; }
+  .chip.active{ background:#8B7BB8; color:#fff; border-color:#8B7BB8; }
+  .tabbtn{ display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10.5px; color:#8C8095; }
+  .tabbtn.active{ color:#6C5A98; font-weight:600; }
+  .card{ background:#fff; border:1px solid #EAE1F2; border-radius:20px; }
+  input[type=text],input[type=number],input[type=date]{ border:1px solid #EAE1F2; border-radius:12px; padding:10px 12px; font-size:14px; width:100%; background:#fff;}
+  input:focus{ outline:2px solid #8B7BB8; outline-offset:1px; }
+  ::-webkit-scrollbar{ width:0; }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="frame" id="frame">
+
+  <!-- ONBOARDING -->
+  <div class="screen" id="scr-onboard">
+    <div class="pt-2 pb-4">
+      <p class="font-head text-2xl text-[#453A52]">Welcome to Bloom 🌸</p>
+      <p class="text-sm text-[#8C8095] mt-1">Let's set up your baseline — this takes about 2 minutes.</p>
+    </div>
+
+    <div class="card p-4 mb-4">
+      <p class="font-head text-[15px] mb-3">About you</p>
+      <div class="grid grid-cols-2 gap-3">
+        <input type="text" id="ob-name" placeholder="Name" class="col-span-2" />
+        <input type="number" id="ob-age" placeholder="Age" />
+        <input type="number" id="ob-height" placeholder="Height (cm)" oninput="calcBMI()" />
+        <input type="number" id="ob-weight" placeholder="Weight (kg)" oninput="calcBMI()" class="col-span-2" />
+      </div>
+      <div class="mt-3 flex items-center justify-between bg-[#EFE9F7] rounded-xl px-3 py-2">
+        <span class="text-sm text-[#6C5A98]">Your BMI</span>
+        <span class="font-head text-lg text-[#6C5A98]" id="bmi-out">—</span>
+      </div>
+    </div>
+
+    <div class="card p-4 mb-4">
+      <p class="font-head text-[15px] mb-1">Cycle history</p>
+      <p class="text-xs text-[#8C8095] mb-3">Enter your last 3 periods to spot irregularity patterns.</p>
+      <div class="space-y-2" id="cycle-rows"></div>
+      <div class="mt-3 bg-[#F1DAD3] rounded-xl px-3 py-2 text-xs text-[#6C4A40]" id="cycle-flag">Fill in dates to see your pattern.</div>
+    </div>
+
+    <button onclick="finishOnboarding()" class="w-full bg-[#8B7BB8] text-white font-head text-[15px] py-3 rounded-full mt-1">Build my dashboard</button>
+    <p class="text-[10px] text-[#8C8095] text-center mt-4 leading-relaxed">Bloom offers general lifestyle guidance and does not replace medical diagnosis or treatment. Always consult your gynecologist or endocrinologist.</p>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen hidden-screen" id="scr-dash">
+    <div class="flex items-center justify-between pt-2 mb-4">
+      <div>
+        <p class="text-xs text-[#8C8095]">Good morning,</p>
+        <p class="font-head text-xl" id="dash-name">there 🌿</p>
+      </div>
+      <div class="w-10 h-10 rounded-full bg-[#DCEBD8] flex items-center justify-center text-lg">🔔</div>
+    </div>
+
+    <div class="card p-5 mb-4 text-center">
+      <svg viewBox="0 0 200 200" class="w-40 h-40 mx-auto" id="phase-ring"></svg>
+      <p class="font-head text-lg mt-2" id="phase-title">Extended Follicular Phase</p>
+      <p class="text-xs text-[#8C8095]" id="phase-sub">Cycle day 12 · delayed ovulation common in PCOD</p>
+    </div>
+
+    <div class="grid grid-cols-4 gap-2 mb-4 text-center text-[11px]">
+      <div class="card p-2"><p class="text-rosed font-head">Day 1–7</p><p class="text-[#8C8095]">Menstrual</p></div>
+      <div class="card p-2 border-2 border-[#8B7BB8]"><p class="text-lavd font-head">Day 6–35+</p><p class="text-[#8C8095]">Follicular</p></div>
+      <div class="card p-2"><p class="text-saged font-head">~3 days</p><p class="text-[#8C8095]">Ovulatory</p></div>
+      <div class="card p-2"><p class="text-rosed font-head">~12 days</p><p class="text-[#8C8095]">Luteal</p></div>
+    </div>
+
+    <div class="card p-4 mb-4">
+      <p class="font-head text-[15px] mb-2">Today's focus</p>
+      <div class="flex gap-3 items-start mb-3">
+        <div class="w-9 h-9 rounded-full bg-[#EFE9F7] flex items-center justify-center">🥗</div>
+        <div><p class="text-sm font-medium">Low-GI breakfast</p><p class="text-xs text-[#8C8095]">Steel-cut oats + cinnamon help combat insulin resistance in this extended phase.</p></div>
+      </div>
+      <div class="flex gap-3 items-start">
+        <div class="w-9 h-9 rounded-full bg-[#EFE9F7] flex items-center justify-center">🏋️</div>
+        <div><p class="text-sm font-medium">Strength training</p><p class="text-xs text-[#8C8095]">20 min resistance work — builds insulin sensitivity better than cardio alone today.</p></div>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <p class="font-head text-[15px] mb-2">Phase-by-phase guide</p>
+      <div class="space-y-2 text-xs">
+        <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-rosed mt-1 shrink-0"></span><p><b>Menstrual:</b> rest, iron-rich foods (spinach, dates), gentle yoga.</p></div>
+        <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-lavd mt-1 shrink-0"></span><p><b>Extended Follicular:</b> low-GI meals, strength training, patience — ovulation may come late.</p></div>
+        <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-saged mt-1 shrink-0"></span><p><b>Ovulatory:</b> high-energy workouts, antioxidant-rich produce.</p></div>
+        <div class="flex gap-2"><span class="w-2 h-2 rounded-full bg-rosed mt-1 shrink-0"></span><p><b>Luteal:</b> magnesium + a little dark chocolate for cravings, stress-reduction breathing.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOOD TEST -->
+  <div class="screen hidden-screen" id="scr-blood">
+    <p class="font-head text-xl pt-2 mb-1">PCOD Type Analyzer</p>
+    <p class="text-xs text-[#8C8095] mb-4">Enter your latest lab values for a personalized subtype read.</p>
+
+    <div class="card p-4 mb-4 space-y-3">
+      <div><label class="text-xs text-[#8C8095]">Fasting Insulin (µIU/mL)</label><input type="number" id="bt-insulin" placeholder="e.g. 18" /></div>
+      <div><label class="text-xs text-[#8C8095]">LH/FSH Ratio</label><input type="number" step="0.1" id="bt-lhfsh" placeholder="e.g. 1.8" /></div>
+      <div><label class="text-xs text-[#8C8095]">DHEAS (µg/dL)</label><input type="number" id="bt-dheas" placeholder="e.g. 280" /></div>
+      <div><label class="text-xs text-[#8C8095]">CRP (mg/L)</label><input type="number" step="0.1" id="bt-crp" placeholder="e.g. 4.2" /></div>
+      <label class="flex items-center gap-2 text-xs text-[#8C8095]"><input type="checkbox" id="bt-pill" class="w-4 h-4" /> Stopped hormonal birth control in the last 6 months</label>
+      <button onclick="analyzeBlood()" class="w-full bg-[#8B7BB8] text-white font-head py-3 rounded-full">Analyze results</button>
+    </div>
+
+    <div class="card p-4 hidden-screen" id="bt-result">
+      <p class="text-xs text-[#8C8095] mb-1">Likely subtype</p>
+      <p class="font-head text-lg mb-2" id="bt-type">—</p>
+      <p class="text-sm text-[#453A52]" id="bt-advice"></p>
+    </div>
+    <p class="text-[10px] text-[#8C8095] text-center mt-4 leading-relaxed">This is a lifestyle-guidance estimate only, not a diagnosis. Please confirm your PCOD subtype with your doctor.</p>
+  </div>
+
+  <!-- TRACKER -->
+  <div class="screen hidden-screen" id="scr-track">
+    <p class="font-head text-xl pt-2 mb-1">Daily Check-in</p>
+    <p class="text-xs text-[#8C8095] mb-4">How are you feeling today?</p>
+
+    <div class="card p-4 mb-3">
+      <p class="text-xs text-[#8C8095] mb-2">MOOD</p>
+      <div class="flex flex-wrap gap-2" data-group="mood">
+        <button class="chip" onclick="toggleChip(this)">😊 Happy</button>
+        <button class="chip" onclick="toggleChip(this)">😣 Irritable</button>
+        <button class="chip" onclick="toggleChip(this)">😰 Anxious</button>
+        <button class="chip" onclick="toggleChip(this)">😴 Tired</button>
+      </div>
+    </div>
+    <div class="card p-4 mb-3">
+      <p class="text-xs text-[#8C8095] mb-2">SYMPTOMS</p>
+      <div class="flex flex-wrap gap-2" data-group="symptom">
+        <button class="chip" onclick="toggleChip(this)">Acne</button>
+        <button class="chip" onclick="toggleChip(this)">Bloating</button>
+        <button class="chip" onclick="toggleChip(this)">Hair fall</button>
+        <button class="chip" onclick="toggleChip(this)">Cramps</button>
+      </div>
+    </div>
+    <div class="card p-4 mb-4">
+      <p class="text-xs text-[#8C8095] mb-2">CRAVINGS</p>
+      <div class="flex flex-wrap gap-2" data-group="craving">
+        <button class="chip" onclick="toggleChip(this)">Sweet</button>
+        <button class="chip" onclick="toggleChip(this)">Salty</button>
+        <button class="chip" onclick="toggleChip(this)">None today</button>
+      </div>
+    </div>
+    <button onclick="logCheckin()" class="w-full bg-[#8B7BB8] text-white font-head py-3 rounded-full mb-5">Save today's check-in</button>
+
+    <p class="font-head text-[15px] mb-2">Today's reminders</p>
+    <div class="space-y-2">
+      <div class="card p-3 flex gap-3 items-start"><span class="text-lg">🌅</span><div><p class="text-sm font-medium">Morning phase insight</p><p class="text-xs text-[#8C8095]">Follicular Day 12 — try an inositol-rich breakfast like berries + Greek yogurt.</p></div></div>
+      <div class="card p-3 flex gap-3 items-start"><span class="text-lg">💧</span><div><p class="text-sm font-medium">Hydration & supplements</p><p class="text-xs text-[#8C8095]">2L water goal, and your evening magnesium dose.</p></div></div>
+      <div class="card p-3 flex gap-3 items-start"><span class="text-lg">🌙</span><div><p class="text-sm font-medium">Luteal mood support</p><p class="text-xs text-[#8C8095]">Cravings tend to peak now — a square of dark chocolate is okay.</p></div></div>
+    </div>
+  </div>
+
+  <!-- FERTILITY -->
+  <div class="screen hidden-screen" id="scr-fert">
+    <p class="font-head text-xl pt-2 mb-1">Fertility & Safety Window</p>
+    <p class="text-xs text-[#8C8095] mb-4">Adjusted for your irregular cycle pattern.</p>
+
+    <div class="card p-4 mb-4">
+      <div class="flex justify-between text-[11px] text-[#8C8095] mb-2" id="fert-month"></div>
+      <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-[#8C8095] mb-1">
+        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      </div>
+      <div class="grid grid-cols-7 gap-1" id="fert-grid"></div>
+    </div>
+
+    <div class="card p-4 mb-4 space-y-2 text-xs">
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rosed"></span> Period days</div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-saged"></span> Predicted ovulation window</div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#E4DCF0]"></span> Lower-fertility (safer) days</div>
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full border border-[#EAE1F2]"></span> Regular day</div>
+    </div>
+    <p class="text-[10px] text-[#8C8095] text-center leading-relaxed">With PCOD, ovulation timing can shift — use this as a general guide, not a contraceptive method, and pair with clinical tracking if pregnancy planning or prevention matters to you.</p>
+  </div>
+
+  <!-- AI INSIGHTS -->
+  <div class="screen hidden-screen" id="scr-ai">
+    <div class="flex items-center gap-2 pt-2 mb-1">
+      <span class="text-xl">✨</span>
+      <p class="font-head text-xl">Ask Bloom AI</p>
+    </div>
+    <p class="text-xs text-[#8C8095] mb-3">Personalized answers about your cycle, symptoms, and today's choices.</p>
+    <div class="bg-[#EFE9F7] text-[#6C5A98] text-[10px] rounded-xl px-3 py-2 mb-3">Answers come from Gemini once a server key is set up. Until then, you'll see a labeled offline demo reply.</div>
+
+    <div class="card p-3 mb-3 h-[360px] overflow-y-auto flex flex-col gap-2" id="ai-log">
+      <div class="bg-[#EFE9F7] rounded-2xl rounded-bl-sm px-3 py-2 text-sm max-w-[85%]">Hi! I'm Bloom AI 🌸 Ask me anything about today's phase, a symptom, or what to eat — I'll tailor it to your profile.</div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-3">
+      <button class="chip" onclick="askQuick('Why am I so tired today?')">Why so tired?</button>
+      <button class="chip" onclick="askQuick('What should I eat today?')">What to eat?</button>
+      <button class="chip" onclick="askQuick('Explain my current phase')">Explain my phase</button>
+    </div>
+
+    <div class="flex gap-2">
+      <input type="text" id="ai-input" placeholder="Type your question…" class="flex-1" onkeydown="if(event.key==='Enter')sendAI()" />
+      <button onclick="sendAI()" class="bg-[#8B7BB8] text-white font-head px-4 rounded-full">Send</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-[#EAE1F2] px-3 pt-2 pb-[calc(10px+env(safe-area-inset-bottom,0px))] hidden-screen" id="tabbar">
+    <div class="grid grid-cols-5">
+      <button class="tabbtn active" onclick="showTab('dash',this)"><span>🌸</span>Dashboard</button>
+      <button class="tabbtn" onclick="showTab('blood',this)"><span>🧪</span>Blood</button>
+      <button class="tabbtn" onclick="showTab('track',this)"><span>✅</span>Tracker</button>
+      <button class="tabbtn" onclick="showTab('fert',this)"><span>🌙</span>Fertility</button>
+      <button class="tabbtn" onclick="showTab('ai',this)"><span>✨</span>AI</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ---- Onboarding: cycle rows ----
+const cycleRowsEl = document.getElementById('cycle-rows');
+for(let i=1;i<=3;i++){
+  const row = document.createElement('div');
+  row.className = 'grid grid-cols-2 gap-2';
+  row.innerHTML = `<input type="date" class="cy-date" oninput="checkCycles()" /><input type="number" placeholder="Flow days" class="cy-flow" />`;
+  cycleRowsEl.appendChild(row);
+}
+function checkCycles(){
+  const dates = [...document.querySelectorAll('.cy-date')].map(i=>i.value).filter(Boolean).sort();
+  const flag = document.getElementById('cycle-flag');
+  if(dates.length < 2){ flag.textContent = 'Fill in dates to see your pattern.'; return; }
+  const intervals = [];
+  for(let i=1;i<dates.length;i++){
+    intervals.push(Math.round((new Date(dates[i]) - new Date(dates[i-1])) / 86400000));
+  }
+  const avg = Math.round(intervals.reduce((a,b)=>a+b,0)/intervals.length);
+  window.avgCycle = avg;
+  if(avg >= 35){
+    flag.textContent = `Average interval: ${avg} days — this pattern (oligomenorrhea) is common in PCOD. Your dashboard will extend the follicular phase accordingly.`;
+  } else if(avg >= 22 && avg <= 34){
+    flag.textContent = `Average interval: ${avg} days — within a fairly typical range.`;
+  } else {
+    flag.textContent = `Average interval: ${avg} days.`;
+  }
+}
+
+function calcBMI(){
+  const h = parseFloat(document.getElementById('ob-height').value)/100;
+  const w = parseFloat(document.getElementById('ob-weight').value);
+  const out = document.getElementById('bmi-out');
+  if(h>0 && w>0){ out.textContent = (w/(h*h)).toFixed(1); } else { out.textContent = '—'; }
+}
+
+function finishOnboarding(){
+  const name = document.getElementById('ob-name').value.trim();
+  document.getElementById('dash-name').textContent = (name ? name : 'there') + ' 🌿';
+  document.getElementById('scr-onboard').classList.add('hidden-screen');
+  document.getElementById('tabbar').classList.remove('hidden-screen');
+  showTab('dash', document.querySelector('.tabbtn'));
+  drawPhaseRing();
+}
+
+// ---- Tabs ----
+function showTab(name, btn){
+  ['dash','blood','track','fert','ai'].forEach(s=>document.getElementById('scr-'+s).classList.add('hidden-screen'));
+  document.getElementById('scr-'+name).classList.remove('hidden-screen');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(name==='fert') drawFertility();
+}
+
+// ---- AI Insights (demo logic; see notes for real Gemini wiring) ----
+function bubble(text, mine){
+  const log = document.getElementById('ai-log');
+  const div = document.createElement('div');
+  div.className = mine
+    ? 'self-end bg-[#8B7BB8] text-white rounded-2xl rounded-br-sm px-3 py-2 text-sm max-w-[85%]'
+    : 'bg-[#EFE9F7] rounded-2xl rounded-bl-sm px-3 py-2 text-sm max-w-[85%]';
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+function askQuick(q){ document.getElementById('ai-input').value = q; sendAI(); }
+function generateAIReply(q){
+  const cycle = window.avgCycle || 38;
+  const lower = q.toLowerCase();
+  if(lower.includes('tired')){
+    return `In your Extended Follicular Phase (common with a ~${cycle}-day PCOD cycle), insulin resistance can blunt energy. Try a protein + fibre breakfast and a 20-min walk before noon — both help stabilize blood sugar and energy.`;
+  }
+  if(lower.includes('eat') || lower.includes('diet') || lower.includes('food')){
+    return `For today's phase, aim for low-GI plates: whole grains, legumes, and non-starchy veg, plus a source of protein each meal. Cinnamon and inositol-rich foods (like berries and oats) can also support insulin sensitivity.`;
+  }
+  if(lower.includes('phase')){
+    return `You're likely in the Extended Follicular Phase — a stretch common in PCOD where ovulation is delayed. It's a good window for strength training and steady, low-GI meals while your body builds toward ovulation.`;
+  }
+  return `Based on your ~${cycle}-day cycle pattern, this phase calls for steady blood-sugar support — regular meals, light movement, and consistent sleep. Want tips on food, mood, or exercise specifically?`;
+}
+async function sendAI(){
+  const input = document.getElementById('ai-input');
+  const q = input.value.trim();
+  if(!q) return;
+  bubble(q, true);
+  input.value = '';
+  const typing = bubble('Bloom AI is typing…', false);
+  const phaseInfo = (document.getElementById('phase-title')||{}).textContent || '';
+  try{
+    const resp = await fetch('/api/gemini', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ question:q, phaseInfo, cycleLength: window.avgCycle || 38 })
+    });
+    const data = await resp.json();
+    if(!resp.ok || !data.reply) throw new Error(data.error || 'no reply');
+    typing.textContent = data.reply;
+  } catch(e){
+    typing.textContent = generateAIReply(q) + '  (offline demo reply — Gemini key not connected yet)';
+  }
+}
+
+// ---- Phase ring ----
+function drawPhaseRing(){
+  const cycle = window.avgCycle || 38;
+  const day = 12;
+  const segs = [
+    {len:7, color:'#C98F82'},
+    {len:Math.max(cycle-19,10), color:'#8B7BB8'},
+    {len:3, color:'#7FA377'},
+    {len:9, color:'#C98F82'}
+  ];
+  const total = segs.reduce((a,s)=>a+s.len,0);
+  let angle = -90, svg = '';
+  const r=80, cx=100, cy=100;
+  segs.forEach(s=>{
+    const sweep = (s.len/total)*360;
+    const x1 = cx + r*Math.cos(angle*Math.PI/180), y1 = cy + r*Math.sin(angle*Math.PI/180);
+    const end = angle+sweep;
+    const x2 = cx + r*Math.cos(end*Math.PI/180), y2 = cy + r*Math.sin(end*Math.PI/180);
+    const large = sweep>180?1:0;
+    svg += `<path d="M${x1} ${y1} A${r} ${r} 0 ${large} 1 ${x2} ${y2}" stroke="${s.color}" stroke-width="14" fill="none" stroke-linecap="round"/>`;
+    angle = end;
+  });
+  const dot = (day/total)*360 - 90;
+  const dx = cx + r*Math.cos(dot*Math.PI/180), dy = cy + r*Math.sin(dot*Math.PI/180);
+  svg += `<circle cx="${dx}" cy="${dy}" r="7" fill="#453A52" stroke="#fff" stroke-width="2"/>`;
+  svg += `<text x="100" y="95" text-anchor="middle" font-family="Quicksand" font-size="26" fill="#453A52" font-weight="700">Day ${day}</text>`;
+  svg += `<text x="100" y="115" text-anchor="middle" font-family="Inter" font-size="11" fill="#8C8095">of ~${total}-day cycle</text>`;
+  document.getElementById('phase-ring').innerHTML = svg;
+  document.getElementById('phase-sub').textContent = `Cycle day ${day} · avg cycle ~${total} days`;
+}
+
+// ---- Blood test analyzer ----
+function analyzeBlood(){
+  const insulin = parseFloat(document.getElementById('bt-insulin').value)||0;
+  const crp = parseFloat(document.getElementById('bt-crp').value)||0;
+  const dheas = parseFloat(document.getElementById('bt-dheas').value)||0;
+  const pill = document.getElementById('bt-pill').checked;
+  let type, advice;
+  if(insulin >= 15){
+    type = 'Insulin-Resistant PCOD';
+    advice = 'Focus on a Low-GI diet (whole grains, legumes, non-starchy veg) and regular strength + brisk-walk exercise to improve insulin sensitivity.';
+  } else if(crp >= 3){
+    type = 'Inflammatory PCOD';
+    advice = 'Lean toward anti-inflammatory nutrition — omega-3-rich fish or flaxseed, turmeric, leafy greens — and limit processed sugar.';
+  } else if(dheas >= 275){
+    type = 'Adrenal PCOD';
+    advice = 'Prioritize stress management and a consistent sleep routine; gentle yoga and breathwork can help lower adrenal androgen output.';
+  } else if(pill){
+    type = 'Post-Pill PCOD';
+    advice = 'Give your body time — focus on gut and hormonal restoration with probiotic foods, B-vitamins, and patience through a few irregular cycles.';
+  } else {
+    type = 'Mixed / Inconclusive';
+    advice = "Your values don't strongly point to one subtype. Share these results with your doctor for a full clinical read.";
+  }
+  document.getElementById('bt-type').textContent = type;
+  document.getElementById('bt-advice').textContent = advice;
+  document.getElementById('bt-result').classList.remove('hidden-screen');
+}
+
+// ---- Daily check-in chips ----
+function toggleChip(el){ el.classList.toggle('active'); }
+function logCheckin(){
+  const btn = event.target;
+  const old = btn.textContent;
+  btn.textContent = 'Saved ✓';
+  setTimeout(()=>btn.textContent = old, 1400);
+}
+
+// ---- Fertility calendar ----
+function drawFertility(){
+  const today = new Date();
+  const y = today.getFullYear(), m = today.getMonth();
+  document.getElementById('fert-month').innerHTML = `<span class="font-head text-[13px] text-[#453A52]">${today.toLocaleString('default',{month:'long'})} ${y}</span>`;
+  const first = new Date(y,m,1).getDay();
+  const days = new Date(y,m+1,0).getDate();
+  const cycle = window.avgCycle || 38;
+  const periodStart = 3;
+  const ovStart = Math.max(cycle-16,10), ovEnd = ovStart+3;
+  let html = '';
+  for(let i=0;i<first;i++) html += `<div></div>`;
+  for(let d=1; d<=days; d++){
+    let cls = 'border border-[#EAE1F2] text-[#453A52]';
+    if(d>=periodStart && d<periodStart+5) cls = 'bg-rose text-[#6C4A40]';
+    else if(d>=ovStart && d<=ovEnd) cls = 'bg-sage text-[#4A6144]';
+    else if(d < periodStart || d > ovEnd+6) cls = 'bg-[#E4DCF0] text-[#5B4E75]';
+    html += `<div class="aspect-square rounded-lg flex items-center justify-center text-[11px] ${cls}">${d}</div>`;
+  }
+  document.getElementById('fert-grid').innerHTML = html;
+}
+</script>
+</body>
+</html>
